@@ -1,4 +1,5 @@
 ﻿using CodeGenerator.Component;
+using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,7 +28,6 @@ namespace CodeGenerator
         private readonly PropertyCollection keys = new PropertyCollection();
         private string tableName = "";
         private ActionType actionType = ActionType.Select;
-        private ActionType methodActionType = ActionType.Select;
         private FormModelCollection formModel = new FormModelCollection();
         #endregion
 
@@ -36,41 +36,17 @@ namespace CodeGenerator
 
         private void saveBOFile_FileOk(object sender, CancelEventArgs e)
         {
-            FileStream fs = new FileStream(saveBOFile.FileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-            StreamWriter sw = new StreamWriter(fs);
-            sw.Write(rtbBol.Text);
-            sw.Flush();
-            sw.Close();
-            fs.Close();
-            FileInfo x = new FileInfo(saveBOFile.FileName);
-            Manager.GetTable(TableName.lastSaveFile)["path"] = x.DirectoryName;
-            Manager.WriteDatas();
+            this.SaveFile(saveBOFile.FileName, rtbBol.Text);
         }
 
         private void saveFacadeFile_FileOk(object sender, CancelEventArgs e)
         {
-            FileStream fs = new FileStream(saveFacadeFile.FileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-            StreamWriter sw = new StreamWriter(fs);
-            sw.Write(rtbFacade.Text);
-            sw.Flush();
-            sw.Close();
-            fs.Close();
-            FileInfo x = new FileInfo(saveFacadeFile.FileName);
-            Manager.GetTable(TableName.lastSaveFile)["path"] = x.DirectoryName;
-            Manager.WriteDatas();
+            this.SaveFile(saveFacadeFile.FileName, rtbFacade.Text);
         }
 
         private void saveDalFile_FileOk(object sender, CancelEventArgs e)
         {
-            FileStream fs = new FileStream(saveDalFile.FileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-            StreamWriter sw = new StreamWriter(fs);
-            sw.Write(rtbMethodDAl.Text);
-            sw.Flush();
-            sw.Close();
-            fs.Close();
-            FileInfo x = new FileInfo(saveDalFile.FileName);
-            Manager.GetTable(TableName.lastSaveFile)["path"] = x.DirectoryName;
-            Manager.WriteDatas();
+            this.SaveFile(saveDalFile.FileName, rtbMethodDAl.Text);
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -172,13 +148,7 @@ namespace CodeGenerator
                                 {
                                     Directory.CreateDirectory(directory);
                                 }
-
-                                FileStream fs = new FileStream(directory + "\\" + table.Split('.')[1] + ".cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                                StreamWriter sw = new StreamWriter(fs);
-                                sw.Write(GenerateDataStructureFileContent(table, directory));
-                                sw.Flush();
-                                sw.Close();
-                                fs.Close();
+                                this.SaveFile(directory, table.Split('.')[1] + ".cs", GenerateDataStructureFileContent(table, directory));
                             }
                         }
                         catch { }
@@ -205,11 +175,6 @@ namespace CodeGenerator
             Manager.WriteDatas();
             prog.Visible = false;
         }
-
-        //private void cbTableNameClass_SelectedIndexChanged(object sender, EventArgs e)
-        //{
-        //    this.tableName = this.cbTableNameClass.Text;
-        //}
 
         private void btnCopyToClipboard_Click(object sender, EventArgs e)
         {
@@ -293,13 +258,7 @@ namespace CodeGenerator
                             string table = ((DataRowView)(item)).Row.ItemArray[0].ToString();
                             if (table != "sysdiagrams")
                             {
-                                string txt = GenerateBoClass(table);
-                                FileStream fs = new FileStream(folderBrowserDialog1.SelectedPath + "\\" + table.Split('.')[1] + "BO.cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                                StreamWriter sw = new StreamWriter(fs);
-                                sw.Write(txt);
-                                sw.Flush();
-                                sw.Close();
-                                fs.Close();
+                                this.SaveFile(folderBrowserDialog1.SelectedPath, table.Split('.')[1] + "BO.cs", GenerateBoClass(table));
                             }
                         }
                         catch { }
@@ -394,13 +353,7 @@ namespace CodeGenerator
                             if (table != "sysdiagrams")
                             {
                                 string txt = GenerateFacadeClass(table);
-                                FileStream fs = new FileStream(folderBrowserDialog1.SelectedPath + "\\" + table + "Facade.cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                                StreamWriter sw = new StreamWriter(fs);
-                                sw.Write(txt);
-                                sw.Flush();
-                                sw.Close();
-                                fs.Close();
-
+                                this.SaveFile(folderBrowserDialog1.SelectedPath, table + "Facade.cs", txt);
                                 //Generate Interface
                                 string interfacePath = folderBrowserDialog1.SelectedPath + "\\Interface";
                                 if (!Directory.Exists(interfacePath))
@@ -409,12 +362,7 @@ namespace CodeGenerator
                                 }
 
                                 GenerateFacadeInterface(table);
-                                fs = new FileStream(interfacePath + "\\I" + table + "Facade.cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                                sw = new StreamWriter(fs);
-                                sw.Write(rtbFacade.Text);
-                                sw.Flush();
-                                sw.Close();
-                                fs.Close();
+                                this.SaveFile(interfacePath, "I" + table + "Facade.cs", rtbFacade.Text);
                             }
                         }
                         catch
@@ -455,13 +403,7 @@ namespace CodeGenerator
                 }
 
                 GenerateFacadeInterface(table);
-                FileStream fs = new FileStream(interfacePath + "\\I" + table + "Facade.cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                StreamWriter sw = new StreamWriter(fs);
-                sw.Write(rtbFacade.Text);
-                sw.Flush();
-                sw.Close();
-                fs.Close();
-
+                this.SaveFile(interfacePath, "I" + table + "Facade.cs", rtbFacade.Text);
             }
             else
             {
@@ -703,12 +645,6 @@ namespace CodeGenerator
             return str.ToString();
         }
 
-        //private void cbTableNameMethods_SelectedIndexChanged(object sender, EventArgs e)
-        //{
-        //    this.tableName = this.cbTableNameMethods.Text;
-        //    this.ChangeMethodName();
-        //}
-
         private void btnCopyToclipboardMethod_Click(object sender, EventArgs e)
         {
             Clipboard.SetText(rtbMethodDAl.Text);
@@ -718,14 +654,6 @@ namespace CodeGenerator
         #endregion
 
         #region AspForm
-
-
-        private void btnFeildSetting_Click(object sender, EventArgs e)
-        {
-            GetColumns(tableName);
-            FormSettings frm = new FormSettings(props, formModel);
-            frm.ShowDialog();
-        }
 
         private void mnChangeDatabase_Click(object sender, EventArgs e)
         {
@@ -737,11 +665,6 @@ namespace CodeGenerator
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             Application.Exit();
-        }
-
-        private void closeGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Close();
         }
 
         private void mnRefreshTables_Click(object sender, EventArgs e)
@@ -773,23 +696,18 @@ namespace CodeGenerator
         }
         private void BtnGenerateReact_Click(object sender, EventArgs e)
         {
-            if (!chGenerateControllerMvc.Checked && !chGenerateViewsMvc.Checked)
+            if (!chGenerateController.Checked && !chGenerateNPM.Checked)
             {
                 return;
             }
-
-            if (!chGenerateControllerMvc.Checked && !chListViewMvc.Checked && !chCreateViewMvc.Checked && !chEditViewMvc.Checked && !chDetailViewMvc.Checked && !chDeleteViewMvc.Checked)
-            {
-                return;
-            }
-            if (chGenerateControllerMvc.Checked)
+            if (chGenerateController.Checked)
             {
                 txtCodeBehindReact.Text = GenerateController();
             }
 
-            BtnSaveFileToMvc.Enabled = true;
+            BtnReactSaveFile.Enabled = true;
         }
-        private void BtnSaveFileToMvc_Click(object sender, EventArgs e)
+        private void BtnReactSaveFile_Click(object sender, EventArgs e)
         {
             string[] strings = tableName.Split('.');
             string table = strings[1];
@@ -812,30 +730,91 @@ namespace CodeGenerator
                 return;
             }
 
-            //GenerateViews(selectedPath);
-            //if (chGenerateControllerMvc.Checked)
-            //{
-            FileStream fs = new FileStream($"{selectedPath}\\{table}Controller.cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-            StreamWriter sw = new StreamWriter(fs);
-            //if (chGeneratePartialView.Checked)
-            //{
-            //    sw.Write(GeneratePartialController());
+            GenerateNPM(selectedPath);
+            if (chGenerateController.Checked)
+            {
+                this.SaveFile(selectedPath, table + "Controller.cs", GenerateController());
+            }
+        }
 
-            //}
-            //else
-            //{
-                sw.Write(GenerateController());
+        private void GenerateNPM(string selectedPath)
+        {
+            if (!chGenerateNPM.Checked) return;
 
-            //}
 
-            sw.Flush();
-            sw.Close();
-            fs.Close();
-            Manager.GetTable(TableName.lastSaveFile)["path"] = selectedPath;
-            Manager.WriteDatas();
-            //}
-            //BtnSaveFileToMvc.Enabled = false;
-            //BtnGenerateMvc.Enabled = true;
+            if (chGenerateNPM.Checked)
+            {
+                if (this.chNPMService.Checked)
+                    this.GenerateReactService(tableName, selectedPath);
+                if (this.chNPMAction.Checked)
+                    this.GenerateReactAction(tableName, selectedPath);
+                if (this.chNPMReducers.Checked)
+                    this.GenerateReducer(tableName, selectedPath);
+                if (this.chNPMComponent.Checked)
+                    this.GenerateReactComponent(tableName, selectedPath);
+            }
+        }
+
+        private void GenerateReactComponent(string tableName, string selectedPath)
+        {
+            var content = "";
+            if (!Directory.Exists(selectedPath + "\\components"))
+                Directory.CreateDirectory(selectedPath + "\\components");
+            this.SaveFile(selectedPath + "\\components", this.GetCamelCase(tableName) + "Component.js", content);
+
+        }
+
+        private void GenerateReactService(string tableName, string selectedPath)
+        {
+            var schema = this.GetCamelCase(tableName.Split('.')[0]);
+            var table = this.GetCamelCase(tableName.Split('.')[1]);
+            var str = new StringBuilder();
+            str.AppendLine("import http from '../../httpService';");
+            str.AppendLine("import config from './../../config.json';");
+            str.AppendLine();
+            str.AppendLine("export const " + table + "IndexService = () => {");
+            str.AppendLine("return http.get(");
+            str.AppendLine("`${config.localapi}/" + schema + "/" + table + "/index`);};");
+            str.AppendLine();
+            str.AppendLine("export const " + table + "SingleService = id => {");
+            str.AppendLine("return http.get(");
+            str.AppendLine("`${config.localapi}/" + schema + "/" + table + "/get/${id}`);}");
+            str.AppendLine();
+            str.AppendLine("export const " + table + "CreateService = " + table + " => {");
+            str.AppendLine("return http.post(");
+            str.AppendLine("`${ config.localapi}/" + schema + "/" + table + "/create`,");
+            str.AppendLine("JSON.stringify(" + table + "));}");
+            str.AppendLine();
+
+            str.AppendLine("export const " + table + "DeleteService = id => {");
+            str.AppendLine("return http.delete(");
+            str.AppendLine("`${config.localapi}/" + schema + "/" + table + "/delete/${id}`,);}");
+            str.AppendLine();
+
+            str.AppendLine("export const " + table + "UpdateService = (" + table + ") => {");
+            str.AppendLine("return http.put(");
+            str.AppendLine("`${config.localapi}/" + schema + "/" + table + "/edit`,");
+            str.AppendLine("JSON.stringify(" + table + "))}");
+            this.SaveFile(selectedPath, table + "Services.js", str.ToString());
+
+        }
+
+        private void GenerateReducer(string tableName, string selectedPath)
+        {
+            var content = "";
+            if (!Directory.Exists(selectedPath + "\\reducers"))
+                Directory.CreateDirectory(selectedPath + "\\reducers");
+            this.SaveFile(selectedPath + "\\reducers", this.GetCamelCase(tableName) + "Reducer.js", content);
+
+        }
+
+        private void GenerateReactAction(string tableName, string selectedPath)
+        {
+            var content = "";
+            if (!Directory.Exists(selectedPath + "\\actions"))
+                Directory.CreateDirectory(selectedPath + "\\actions");
+            this.SaveFile(selectedPath + "\\actions", this.GetCamelCase(tableName) + "Action.js", content);
+
         }
         #region Generate Controller
         private string GenerateController()
@@ -922,13 +901,13 @@ namespace CodeGenerator
             //Create
 
             str.AppendLine("[HttpPost(\"create\")]");
-            str.AppendLine(string.Format("public async Task<IActionResult> Create([FromBody] {0} {1})",table,this.GetCamelCase(table)));
+            str.AppendLine(string.Format("public async Task<IActionResult> Create([FromBody] {0} {1})", table, this.GetCamelCase(table)));
             str.AppendLine("{");
             str.AppendLine("try");
             str.AppendLine("{");
-            str.AppendLine("if ("+this.GetCamelCase(table)+" != null)");
+            str.AppendLine("if (" + this.GetCamelCase(table) + " != null)");
             str.AppendLine("{");
-            str.AppendLine(string.Format("if (await {0}Component.Instance.{1}Facade.InsertAsync({2})) return Ok({2});", component,table,this.GetCamelCase(table)));
+            str.AppendLine(string.Format("if (await {0}Component.Instance.{1}Facade.InsertAsync({2})) return Ok({2});", component, table, this.GetCamelCase(table)));
             str.AppendLine("}");
             str.AppendLine("return Ok(null);");
             str.AppendLine("}");
@@ -991,16 +970,6 @@ namespace CodeGenerator
         }
 
         #endregion
-
-
-        //private void CmdTableMvc_SelectedIndexChanged(object sender, EventArgs e)
-        //{
-        //    this.tableName = this.CmdTableMvc.Text;
-        //    this.formModel = new Component.FormModelCollection();
-        //    this.GetTableDescription(this.tableName);
-        //    this.txtTitleAsp.Text = this.props.TableDescription;
-        //    this.txtFarsiDescAsp.Text = this.props.TableDescription;
-        //}
 
         #endregion
 
@@ -1533,14 +1502,6 @@ namespace CodeGenerator
             }
         }
 
-        private void ChangeFacadeName(string table)
-        {
-            if (drpFacadeAction.SelectedItem != null)
-            {
-                txtFacadeMethodName.Text = table;
-            }
-        }
-
         #endregion
         private void mnChangeTableQuery_Click(object sender, EventArgs e)
         {
@@ -1604,12 +1565,7 @@ namespace CodeGenerator
                         {
                             string table = ((DataRowView)(item)).Row.ItemArray[0].ToString();
                             string txt = GenerateDalClass(table, "");
-                            FileStream fs = new FileStream(folderBrowserDialog1.SelectedPath + "\\" + table.Split('.')[1] + "DA.cs", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                            StreamWriter sw = new StreamWriter(fs);
-                            sw.Write(txt);
-                            sw.Flush();
-                            sw.Close();
-                            fs.Close();
+                            this.SaveFile(folderBrowserDialog1.SelectedPath, table.Split('.')[1] + "DA.cs", txt);
                         }
                         catch { }
                     }
@@ -1652,24 +1608,7 @@ namespace CodeGenerator
 
         private void SaveFileDialogFile(string fileContent)
         {
-            FileStream fs = new FileStream(saveFileDialog1.FileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-            FileInfo fileInfo = new FileInfo(saveFileDialog1.FileName);
-            StreamWriter sw = new StreamWriter(fs);
-            sw.Write(fileContent);
-            sw.Flush();
-            sw.Close();
-            fs.Close();
-            Manager.GetTable(TableName.lastSaveFile)["path"] = fileInfo.DirectoryName;
-            Manager.WriteDatas();
-        }
-
-        private void chGeneratePartialView_CheckedChanged(object sender, EventArgs e)
-        {
-            chEditViewMvc.Visible = true;
-            chListViewMvc.Visible = true;
-            chDeleteViewMvc.Visible = true;
-            chDetailViewMvc.Visible = true;
-            chCreateViewMvc.Visible = true;
+            this.SaveFile(saveFileDialog1.FileName, fileContent);
         }
 
         private string GetCamelCase(string txt)
@@ -1677,5 +1616,24 @@ namespace CodeGenerator
             if (string.IsNullOrEmpty(txt)) return txt;
             return txt[0].ToString().ToLower() + txt.Substring(1, txt.Length - 1);
         }
+
+
+        private void SaveFile(string selectedPath, string fileName, string content)
+        {
+            this.SaveFile(selectedPath + "\\" + fileName, content);
+        }
+        private void SaveFile(string fullPath, string content)
+        {
+            if (File.Exists(fullPath)) return;
+            FileStream fs = new FileStream(fullPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(content);
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+            //Manager.GetTable(TableName.lastSaveFile)["path"] = selectedPath;
+            //Manager.WriteDatas();
+        }
+
     }
 }
