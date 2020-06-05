@@ -1,0 +1,1 @@
+Data Source = Abkar\SqlExpress;Initial Catalog = lis;Integrated Security = True;

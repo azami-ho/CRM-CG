@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<root>
+  <connectionString dataBase="radyncrm" dataSource="192.168.1.42" integratedSecurity="false" pwd="123" uid="sa" />
+  <dsNameSpace value="Radyn.Common" />
+  <dalNameSpace value="" />
+  <solutionRootFolder value="" />
+  <facadeNameSpace value="" />
+  <bolNameSpace value="" />
+  <saveProjectPath value="D:\GitWorkSpace\vipinnHotel\WebApp\Areas\Reservation\Controllers" />
+  <lastSaveFile path="D:\GitWorkSpace\CRM\WebApp\Areas\Security\Controllers" />
+  <masterPageUrl path="~/MasterPages/Main.Master" />
+  <contentPlaceHolderID id="CenterContent" />
+  <collectionPath path="" />
+  <defaultNamespace value="Radyn.ContractPackage" />
+</root>
